@@ -10,6 +10,7 @@ import {
   where,
   deleteDoc,
 } from 'firebase/firestore';
+import moment from 'moment/moment';
 
 export const updateMeet = async (meet, docId) => {
     let result = 'ok';
@@ -25,10 +26,40 @@ export const updateMeet = async (meet, docId) => {
     return result;
 }
 
-export const createMeet = async (meet, docId) => {
+export const getScheduledDays = async () => {
+    try{
+        const docs = await getDocs(collection(database, 'calendarMeets'));
+        console.log(docs)
+        return await new Promise(r=>{
+            let scheduledDays = [];
+            docs.docs.forEach(async (docIn) => {
+            const docRef = collection(database, `calendarMeets/${docIn.id}/meets`);
+            const meetCol = await getDocs(docRef);
+            if(meetCol.empty == false){
+                const data = docIn.data();
+                scheduledDays.push(data.fecha);
+            }
+            r(scheduledDays)
+        })
+    }).then(result => (result));
+        
+    }catch(err){
+        return {scheduledDays: [], error: err}
+    }
+}
+
+export const createMeet = async (meet, docId, date) => {
+    console.log(meet, docId, date)
     let result = 'ok';
         await runTransaction(database, async (transaction) => {
-        const meetInfoRef = collection(database, `calendarMeets/${docId}/meets`)
+        let meetInfoRef;
+        if(typeof docId == 'undefined'){
+            const docIdInternal = await addDoc(collection(database,'calendarMeets'),{fecha: date})
+            meetInfoRef = collection(database, `calendarMeets/${docIdInternal.id}/meets`)
+        }else{
+           meetInfoRef = collection(database, `calendarMeets/${docId}/meets`) 
+        }
+        
         addDoc(meetInfoRef, meet);
     }).catch((err) => {
         result = err;

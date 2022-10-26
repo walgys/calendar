@@ -30,6 +30,7 @@ import {
   deleteMeet,
   getDayMeets,
   getDayMeetsByDocId,
+  getScheduledDays,
   getUsers,
   updateMeet,
 } from '../utilitarios/data';
@@ -37,6 +38,7 @@ import { AuthContext } from '../contexts/authContext';
 import './calendario.css';
 import { Box } from '@mui/system';
 import { useSnackbar } from 'notistack';
+import moment from 'moment';
 const Calendario = () => {
   const { enqueueSnackbar } = useSnackbar();
   const { user } = useContext(AuthContext);
@@ -56,14 +58,13 @@ const Calendario = () => {
   const [modal, setModal] = useState(false);
   const [modalType, setModalType] = useState('');
   const [docId, setDocId] = useState('');
+  const [scheduledDays, setScheduledDays] = useState([]);
   const [firstSearch, setFirstSearch] = useState(true);
   const [daySelected, setDaySelected] = useState(false);
   const [personName, setPersonName] = useState([]);
   const [users, setUsers] = useState([]);
-  const otherDate = new Date();
-  otherDate.setDate(14);
 
-  let invalidDates = [today, otherDate];
+  let invalidDates = [];
   const maxSubjectLength = 40;
   const maxDescriptionLength = 200;
 
@@ -124,15 +125,22 @@ const Calendario = () => {
     clear: 'Limpiar',
   });
 
+  const dateTemplate = (date) => {
+    if (scheduledDays?.some(item => item === moment(date).format('YYYY-MM-DD'))) {
+        return (
+            <div style={{backgroundColor: '#1dcbb3', color: '#ffffff', borderRadius: '50%', width: '2em', height: '2em', display: 'flex', justifyContent: 'center', alignItems: 'center'}}><div>{date.day}</div></div>
+        );
+    }
+    else {
+        return date.day;
+    }
+}
+
   useEffect(() => {
+    getScheduledDays().then(scheduledDaysRet =>  setScheduledDays(scheduledDaysRet))
     setMeets(dayHours);
-  }, []);
-
-  useEffect(() => {
-    console.log(meets)
-  }, [meets])
+  }, []);   
   
-
   const onSelectDate = async (value) => {
     if (firstSearch) {
       const { retrievedMeets, fechaDocId } = await getDayMeets(
@@ -342,24 +350,10 @@ const Calendario = () => {
     const newMeet = { ...selectedMeet, invited: personName };
     let result;
     if (modalType === 'crearCita')
-      createMeet(newMeet, docId).then((result) => {
+      createMeet(newMeet, docId, date.toISOString().split('T')[0]).then((result) => {
         if (result === 'ok') {
           enqueueSnackbar('Cita creada', { variant: 'success' });
-        } else {
-          enqueueSnackbar(`Error al crear cita: ${result}`, {
-            variant: 'error',
-          });
-        }
-        if (docId != '') {
-          getDayMeetsByDocId(docId).then(({ retrievedMeets, fechaDocId }) => {
-            setDocId(fechaDocId);
-            let newMeets = [...dayHours];
-            retrievedMeets.forEach(
-              (retrievedMeet) => (newMeets[retrievedMeet.timeIndex] = retrievedMeet)
-            );
-            setMeets(newMeets);
-          });
-        } else {
+          getScheduledDays().then(scheduledDaysRet =>  setScheduledDays(scheduledDaysRet));
           getDayMeets(date.toISOString().split('T')[0]).then(
             ({ retrievedMeets, fechaDocId }) => {
               setDocId(fechaDocId);
@@ -371,7 +365,12 @@ const Calendario = () => {
               setMeets(newMeets);
             }
           );
+        } else {
+          enqueueSnackbar(`Error al crear cita: ${result}`, {
+            variant: 'error',
+          });
         }
+        
       });
     if (modalType === 'modificarCita')
       updateMeet(newMeet, docId).then((result) => {
@@ -419,33 +418,24 @@ const Calendario = () => {
     deleteMeet(meet, docId).then(result=>{
       if (result === 'ok') {
         enqueueSnackbar('Cita eliminada', { variant: 'info' });
+        getScheduledDays().then(scheduledDaysRet => {console.log(scheduledDaysRet); setScheduledDays(scheduledDaysRet)});
+        getDayMeets(date.toISOString().split('T')[0]).then(
+          ({ retrievedMeets, fechaDocId }) => {
+            setDocId(fechaDocId);
+            let newMeets = [...dayHours];
+            retrievedMeets.forEach(
+              (retrievedMeet) =>
+                (newMeets[retrievedMeet.timeIndex] = retrievedMeet)
+            );
+            setMeets(newMeets);
+          }
+        );
       } else {
         enqueueSnackbar(`Error al eliminar cita: ${result}`, {
           variant: 'error',
         });
       }
-      if (docId != '') {
-      getDayMeetsByDocId(docId).then(({ retrievedMeets, fechaDocId }) => {
-        setDocId(fechaDocId);
-        let newMeets = [...dayHours];
-        retrievedMeets.forEach(
-          (retrievedMeet) => (newMeets[retrievedMeet.timeIndex] = retrievedMeet)
-        );
-        setMeets(newMeets);
-      });
-    } else {
-      getDayMeets(date.toISOString().split('T')[0]).then(
-        ({ retrievedMeets, fechaDocId }) => {
-          setDocId(fechaDocId);
-          let newMeets = [...dayHours];
-          retrievedMeets.forEach(
-            (retrievedMeet) =>
-              (newMeets[retrievedMeet.timeIndex] = retrievedMeet)
-          );
-          setMeets(newMeets);
-        }
-      );
-    }
+      
     });
   }
 
@@ -484,6 +474,7 @@ const Calendario = () => {
               inline
               minDate={minDate}
               maxDate={maxDate}
+              dateTemplate={dateTemplate}
             />
           </div>
           <Slide
