@@ -517,17 +517,13 @@ const Calendario = () => {
                       aria-controls="panel1a-content"
                       id="panel1a-header"
                     >
-                      {isInvited(meet) || isOwner(meet) ? (
+                      
                         <Typography>{`(${index} hs) ${
                           (meet.subject?.length > maxSubjectLength
                             ? `${meet.subject.slice(0, maxSubjectLength)}...`
                             : meet.subject) || ''
                         }`}</Typography>
-                      ) : (
-                        <Typography>{`(${index} hs) ${
-                          (meet.subject?.length > 0 ? `Ocupado` : '') || ''
-                        }`}</Typography>
-                      )}
+                      
                     </AccordionSummary>
                     {Object.keys(meet.owner).length == 0 ? (
                       <AccordionDetails sx={{ backgroundColor: 'whitesmoke' }}>
