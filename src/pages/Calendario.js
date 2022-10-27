@@ -517,13 +517,22 @@ const Calendario = () => {
                       aria-controls="panel1a-content"
                       id="panel1a-header"
                     >
-                      
+                      {/*isInvited(meet) || isOwner(meet) ? (
                         <Typography>{`(${index} hs) ${
                           (meet.subject?.length > maxSubjectLength
                             ? `${meet.subject.slice(0, maxSubjectLength)}...`
                             : meet.subject) || ''
                         }`}</Typography>
-                      
+                      ) : (
+                        <Typography>{`(${index} hs) ${
+                          (meet.subject?.length > 0 ? `Ocupado` : '') || ''
+                        }`}</Typography>
+                      )*/}
+                      <Typography>{`(${index} hs) ${
+                          (meet.subject?.length > maxSubjectLength
+                            ? `${meet.subject.slice(0, maxSubjectLength)}...`
+                            : meet.subject) || ''
+                        }`}</Typography>
                     </AccordionSummary>
                     {Object.keys(meet.owner).length == 0 ? (
                       <AccordionDetails sx={{ backgroundColor: 'whitesmoke' }}>
@@ -545,7 +554,7 @@ const Calendario = () => {
                         </div>
                       </AccordionDetails>
                     ) : (
-                      (isInvited(meet) || isOwner(meet)) && (
+                      (
                         <AccordionDetails
                           sx={{ backgroundColor: 'whitesmoke' }}
                         >
@@ -583,7 +592,7 @@ const Calendario = () => {
                                 </Button>
                               </Tooltip>
                             )}
-                            {(notMember(meet) ||
+                            {((isInvited(meet) && notMember(meet)) ||
                               (notMember(meet) && isOwner(meet))) && (
                               <Tooltip title="Confirmar asistencia">
                                 <Button
@@ -594,7 +603,7 @@ const Calendario = () => {
                                 </Button>
                               </Tooltip>
                             )}
-                            {(!notMember(meet) ||
+                            {((isInvited(meet) && !notMember(meet) )||
                               (!notMember(meet) && isOwner(meet))) && (
                               <Tooltip title="Cancelar asistencia">
                                 <Button
