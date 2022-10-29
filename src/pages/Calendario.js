@@ -144,8 +144,7 @@ const Calendario = () => {
   }, []);
   
   useEffect(() => {
-    if(date){
-      
+    if(date){  
       const retrievedDay = scheduledDays.find(day=>day.fecha == moment(date).format('YYYY-MM-DD'));    
       const retrievedMeets = retrievedDay?.meets || [];
       if(retrievedDay) setDocId(retrievedDay.docId);
@@ -166,8 +165,9 @@ const Calendario = () => {
   };
 
   const changeInfo = async () => {
-    const retrievedDay = scheduledDays.find(day=>day.fecha == date.toISOString().split('T')[0]);
+    const retrievedDay = scheduledDays.find(day=>day.fecha == moment(date).format('YYYY-MM-DD'));
     const retrievedMeets = retrievedDay.meets || [];
+    console.log(retrievedDay)
       setDocId(retrievedDay.docId);
       let newMeets = [...dayHours];
       retrievedMeets.forEach(
@@ -208,7 +208,6 @@ const Calendario = () => {
           }
         : meetState
     );
-    setMeets(newMeets);
     updateMeet(
       {
         ...meet,
@@ -257,7 +256,6 @@ const Calendario = () => {
         });
       }
     });
-    setMeets(newMeets);
   };
 
   const handleClose = () => {
@@ -443,6 +441,7 @@ const Calendario = () => {
                   <Typography align='center'>{moment(day?.fecha).format('DD/MM/YYYY')}</Typography>{day?.meets?.map((meet,index)=>
                   <Accordion
                     key={`hour-${index}`}
+                    onClick={()=>setDocId(day.docId)}
                     sx={{
                       minWidth: '100%',
                       backgroundColor:
