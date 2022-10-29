@@ -13,8 +13,11 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
+  Divider,
   FormControl,
   InputLabel,
+  List,
+  ListItem,
   MenuItem,
   OutlinedInput,
   Paper,
@@ -60,7 +63,8 @@ const Calendario = () => {
   const [docId, setDocId] = useState('');
   const [scheduledDays, setScheduledDays] = useState([]);
   const [firstSearch, setFirstSearch] = useState(true);
-  const [daySelected, setDaySelected] = useState(false);
+  const [scheduleView, setScheduleView] = useState(true);
+  const [daySelected, setDaySelected] = useState(true);
   const [personName, setPersonName] = useState([]);
   const [users, setUsers] = useState([]);
 
@@ -71,8 +75,6 @@ const Calendario = () => {
   const dayHours = [...Array(24).keys()].fill(citaBase);
 
   let minDate = new Date();
-  minDate.setMonth(6);
-  minDate.setDate(19);
   //minDate.setFullYear(prevYear);
 
   let maxDate = new Date();
@@ -139,37 +141,46 @@ const Calendario = () => {
   useEffect(() => {
     getScheduledDays().then(scheduledDaysRet =>  setScheduledDays(scheduledDaysRet))
     setMeets(dayHours);
-  }, []);   
+  }, []);
   
-  const onSelectDate = async (value) => {
-    if (firstSearch) {
-      const { retrievedMeets, fechaDocId } = await getDayMeets(
-        value.toISOString().split('T')[0]
-      );
-      setDocId(fechaDocId);
+  useEffect(() => {
+    if(date){
+      
+      const retrievedDay = scheduledDays.find(day=>day.fecha == moment(date).format('YYYY-MM-DD'));    
+      const retrievedMeets = retrievedDay?.meets || [];
+      if(retrievedDay) setDocId(retrievedDay.docId);
       let newMeets = [...dayHours];
       retrievedMeets.forEach(
         (retrievedMeet) => (newMeets[retrievedMeet.timeIndex] = retrievedMeet)
       );
+      
       setMeets(newMeets);
-      setFirstSearch(false);
     }
+  }, [scheduledDays])
+  
+  
+  const onSelectDate = async (value) => {
     setDaySelected(!daySelected);
+    setScheduleView(false)
     setDate(value);
   };
 
   const changeInfo = async () => {
-    if (!firstSearch) {
-      const { retrievedMeets, fechaDocId } = await getDayMeets(
-        date.toISOString().split('T')[0]
-      );
-      setDocId(fechaDocId);
+    const retrievedDay = scheduledDays.find(day=>day.fecha == date.toISOString().split('T')[0]);
+    const retrievedMeets = retrievedDay.meets || [];
+    console.log(retrievedMeets)
+      setDocId(retrievedDay.docId);
       let newMeets = [...dayHours];
       retrievedMeets.forEach(
         (retrievedMeet) => (newMeets[retrievedMeet.timeIndex] = retrievedMeet)
       );
       setMeets(newMeets);
-    }
+      if(scheduleView){
+        setFirstSearch(true)}
+        else{
+          setFirstSearch(false)
+        }
+    
     setDaySelected(true);
   };
 
@@ -211,34 +222,14 @@ const Calendario = () => {
     ).then((result) => {
       if (result === 'ok') {
         enqueueSnackbar('Cita modificada', { variant: 'info' });
+        getScheduledDays().then(scheduledDaysRet =>  setScheduledDays(scheduledDaysRet));
       } else {
         enqueueSnackbar(`Error al modificar cita: ${result}`, {
           variant: 'error',
         });
       }
     });
-    if (docId != '') {
-      getDayMeetsByDocId(docId).then(({ retrievedMeets, fechaDocId }) => {
-        setDocId(fechaDocId);
-        let newMeets = [...dayHours];
-        retrievedMeets.forEach(
-          (retrievedMeet) => (newMeets[retrievedMeet.timeIndex] = retrievedMeet)
-        );
-        setMeets(newMeets);
-      });
-    } else {
-      getDayMeets(date.toISOString().split('T')[0]).then(
-        ({ retrievedMeets, fechaDocId }) => {
-          setDocId(fechaDocId);
-          let newMeets = [...dayHours];
-          retrievedMeets.forEach(
-            (retrievedMeet) =>
-              (newMeets[retrievedMeet.timeIndex] = retrievedMeet)
-          );
-          setMeets(newMeets);
-        }
-      );
-    }
+    
   };
 
   const onDesistir = (meet) => {
@@ -260,34 +251,13 @@ const Calendario = () => {
     ).then((result) => {
       if (result === 'ok') {
         enqueueSnackbar('Cita modificada', { variant: 'info' });
+        getScheduledDays().then(scheduledDaysRet =>  setScheduledDays(scheduledDaysRet));
       } else {
         enqueueSnackbar(`Error al modificar cita: ${result}`, {
           variant: 'error',
         });
       }
     });
-    if (docId != '') {
-      getDayMeetsByDocId(docId).then(({ retrievedMeets, fechaDocId }) => {
-        setDocId(fechaDocId);
-        let newMeets = [...dayHours];
-        retrievedMeets.forEach(
-          (retrievedMeet) => (newMeets[retrievedMeet.timeIndex] = retrievedMeet)
-        );
-        setMeets(newMeets);
-      });
-    } else {
-      getDayMeets(date.toISOString().split('T')[0]).then(
-        ({ retrievedMeets, fechaDocId }) => {
-          setDocId(fechaDocId);
-          let newMeets = [...dayHours];
-          retrievedMeets.forEach(
-            (retrievedMeet) =>
-              (newMeets[retrievedMeet.timeIndex] = retrievedMeet)
-          );
-          setMeets(newMeets);
-        }
-      );
-    }
     setMeets(newMeets);
   };
 
@@ -354,17 +324,6 @@ const Calendario = () => {
         if (result === 'ok') {
           enqueueSnackbar('Cita creada', { variant: 'success' });
           getScheduledDays().then(scheduledDaysRet =>  setScheduledDays(scheduledDaysRet));
-          getDayMeets(date.toISOString().split('T')[0]).then(
-            ({ retrievedMeets, fechaDocId }) => {
-              setDocId(fechaDocId);
-              let newMeets = [...dayHours];
-              retrievedMeets.forEach(
-                (retrievedMeet) =>
-                  (newMeets[retrievedMeet.timeIndex] = retrievedMeet)
-              );
-              setMeets(newMeets);
-            }
-          );
         } else {
           enqueueSnackbar(`Error al crear cita: ${result}`, {
             variant: 'error',
@@ -376,33 +335,13 @@ const Calendario = () => {
       updateMeet(newMeet, docId).then((result) => {
         if (result === 'ok') {
           enqueueSnackbar('Cita modificada', { variant: 'info' });
+          getScheduledDays().then(scheduledDaysRet =>  setScheduledDays(scheduledDaysRet));
         } else {
           enqueueSnackbar(`Error al modificar cita: ${result}`, {
             variant: 'error',
           });
         }
-        if (docId != '') {
-          getDayMeetsByDocId(docId).then(({ retrievedMeets, fechaDocId }) => {
-            setDocId(fechaDocId);
-            let newMeets = [...dayHours];
-            retrievedMeets.forEach(
-              (retrievedMeet) => (newMeets[retrievedMeet.timeIndex] = retrievedMeet)
-            );
-            setMeets(newMeets);
-          });
-        } else {
-          getDayMeets(date.toISOString().split('T')[0]).then(
-            ({ retrievedMeets, fechaDocId }) => {
-              setDocId(fechaDocId);
-              let newMeets = [...dayHours];
-              retrievedMeets.forEach(
-                (retrievedMeet) =>
-                  (newMeets[retrievedMeet.timeIndex] = retrievedMeet)
-              );
-              setMeets(newMeets);
-            }
-          );
-        }
+        
       });
     
     setPersonName([]);
@@ -418,18 +357,7 @@ const Calendario = () => {
     deleteMeet(meet, docId).then(result=>{
       if (result === 'ok') {
         enqueueSnackbar('Cita eliminada', { variant: 'info' });
-        getScheduledDays().then(scheduledDaysRet => {console.log(scheduledDaysRet); setScheduledDays(scheduledDaysRet)});
-        getDayMeets(date.toISOString().split('T')[0]).then(
-          ({ retrievedMeets, fechaDocId }) => {
-            setDocId(fechaDocId);
-            let newMeets = [...dayHours];
-            retrievedMeets.forEach(
-              (retrievedMeet) =>
-                (newMeets[retrievedMeet.timeIndex] = retrievedMeet)
-            );
-            setMeets(newMeets);
-          }
-        );
+        getScheduledDays().then(scheduledDaysRet =>  setScheduledDays(scheduledDaysRet));
       } else {
         enqueueSnackbar(`Error al eliminar cita: ${result}`, {
           variant: 'error',
@@ -439,7 +367,21 @@ const Calendario = () => {
     });
   }
 
+  const back = () =>{
+    setScheduleView(true);
+    setDaySelected(!daySelected);
+  }
+
   const containerRef = useRef();
+
+  const myMeets = [...scheduledDays
+    ?.filter((day) => day.meets?.length > 0)
+    .filter((day) =>
+      day.meets.some((meet) =>
+        meet.invited.some((invite) => invite.uid == user.uid) 
+      )
+    ),{fecha: moment().format('YYYY-MM-DD'), today: true}].sort((a,b)=>moment(a.fecha).isBefore(b.fecha) ? -1 : 1);
+    console.log(myMeets)
   return (
     <Paper elevation={2} style={{}}>
       <div
@@ -483,6 +425,147 @@ const Calendario = () => {
             onExited={() => changeInfo()}
             container={containerRef.current}
           >
+          {firstSearch ? <Paper
+          className='noscroll'
+              elevation={2}
+              style={{
+                minWidth: '300px',
+                maxWidth: '500px',
+                height: '460px',
+                padding: '1rem',
+                margin: '1rem',
+                overflow: 'scroll',
+              }}
+            >
+              <List sx={{overflow: 'hidden'}}>
+                {myMeets.map(day=>
+                (day.today ? <Divider >Hoy</Divider> : <ListItem>
+                  <div style={{display: 'flex', flexDirection: 'column', width: '100%'}}>
+
+                  <Typography align='center'>{moment(day?.fecha).format('DD/MM/YYYY')}</Typography>{day?.meets?.map((meet,index)=>
+                  <Accordion
+                    key={`hour-${index}`}
+                    sx={{
+                      minWidth: '100%',
+                      backgroundColor:
+                      moment(day?.fecha).isAfter(minDate)
+                          ? '#FAAA8D'
+                          : '#8BBEB2',
+                    }}
+                  >
+                    <AccordionSummary
+                      expandIcon={<ExpandMoreIcon />}
+                      aria-controls="panel1a-content"
+                      id="panel1a-header"
+                      >
+                      <Typography>{`(${index} hs) ${
+                        (meet.subject?.length > maxSubjectLength
+                            ? `${meet.subject.slice(0, maxSubjectLength)}...`
+                            : meet.subject) || ''
+                        }`}</Typography>
+                    </AccordionSummary>
+                    {Object.keys(meet.owner).length == 0 ? (
+                      <AccordionDetails sx={{ backgroundColor: 'whitesmoke' }}>
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                          }}
+                        >
+                          <Tooltip title="Crear nueva cita">
+                            <Button
+                              variant="outlined"
+                              onClick={() => crearCita(index)}
+                            >
+                              Crear cita
+                            </Button>
+                          </Tooltip>
+                        </div>
+                      </AccordionDetails>
+                    ) : (
+                      (
+                        <AccordionDetails
+                          sx={{ backgroundColor: 'whitesmoke' }}
+                        >
+                          <Typography fontWeight={600} gutterBottom>
+                            {meet.subject || ''}
+                          </Typography>
+                          <Typography>
+                            {(meet.description?.length > maxDescriptionLength
+                              ? `${meet.description.slice(
+                                  0,
+                                  maxDescriptionLength
+                                )}...`
+                              : meet.description) || ''}
+                          </Typography>
+                          {
+                            <>
+                              <Typography fontWeight={600} gutterBottom>
+                                Asistiran:
+                              </Typography>
+                              <Typography fontWeight={400} gutterBottom>
+                                {`${meet.members
+                                  .map((member) => member.displayName)
+                                  .join(',')}`}
+                              </Typography>
+                            </>
+                          }
+                          <div style={{ display: 'flex', gap: '1rem' }}>
+                            {isOwner(meet) && moment(day?.fecha).isSameOrAfter(minDate) && (
+                              <Tooltip title="Modificar cita">
+                                <Button
+                                  variant="outlined"
+                                  onClick={() => modificarCita(meet)}
+                                >
+                                  Modificar
+                                </Button>
+                              </Tooltip>
+                            )}
+                            {((isInvited(meet) && notMember(meet))||
+                              (notMember(meet) && isOwner(meet))) && 
+                              moment(day?.fecha).isSameOrAfter(minDate) && (
+                                <Tooltip title="Confirmar asistencia">
+                                <Button
+                                  variant="outlined"
+                                  onClick={() => onAsistir(meet)}
+                                  >
+                                  Asistir
+                                </Button>
+                              </Tooltip>
+                            )}
+                            {((isInvited(meet) && !notMember(meet) )||
+                              (!notMember(meet) && isOwner(meet))) && 
+                              moment(day?.fecha).isSameOrAfter(minDate) && (
+                              <Tooltip title="Cancelar asistencia">
+                                <Button
+                                  variant="outlined"
+                                  color="error"
+                                  onClick={() => onDesistir(meet)}
+                                  >
+                                  No asistir
+                                </Button>
+                              </Tooltip>
+                            )}
+                            {isOwner(meet) && moment(day?.fecha).isSameOrAfter(minDate) && (
+                              <Tooltip title="Eliminar cita">
+                                <Button color="error" variant="outlined" onClick={()=>removeMeet(meet)}>
+                                  Eliminar
+                                </Button>
+                              </Tooltip>
+                            )}
+                          </div>
+                        </AccordionDetails>
+                      )
+                      )}
+                  </Accordion>)}
+                      </div>
+                  </ListItem>
+                  )
+                  )}
+              </List>
+            </Paper> :
+          
             <Paper
               elevation={2}
               style={{
@@ -493,13 +576,14 @@ const Calendario = () => {
                 margin: '1rem',
               }}
             >
+              <div style={{display: 'flex', marginBottom: '1rem'}}><Button size='small' variant='outlined' onClick={()=>back()}>Mis Citas</Button></div>
               <div
                 className="noscroll"
                 style={{
                   display: 'flex',
                   flexDirection: 'column',
                   overflow: 'scroll',
-                  height: '480px',
+                  height: '380px',
                 }}
               >
                 {meets.map((meet, index) => (
@@ -517,17 +601,6 @@ const Calendario = () => {
                       aria-controls="panel1a-content"
                       id="panel1a-header"
                     >
-                      {/*isInvited(meet) || isOwner(meet) ? (
-                        <Typography>{`(${index} hs) ${
-                          (meet.subject?.length > maxSubjectLength
-                            ? `${meet.subject.slice(0, maxSubjectLength)}...`
-                            : meet.subject) || ''
-                        }`}</Typography>
-                      ) : (
-                        <Typography>{`(${index} hs) ${
-                          (meet.subject?.length > 0 ? `Ocupado` : '') || ''
-                        }`}</Typography>
-                      )*/}
                       <Typography>{`(${index} hs) ${
                           (meet.subject?.length > maxSubjectLength
                             ? `${meet.subject.slice(0, maxSubjectLength)}...`
@@ -629,10 +702,12 @@ const Calendario = () => {
                   </Accordion>
                 ))}
               </div>
-            </Paper>
-          </Slide>
+            </Paper>}
+                            </Slide>
+                          
         </div>
       </div>
+
       <Dialog fullWidth open={modal} onClose={handleClose}>
         <DialogContent>
           <TextField

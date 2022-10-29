@@ -29,16 +29,16 @@ export const updateMeet = async (meet, docId) => {
 export const getScheduledDays = async () => {
     try{
         const docs = await getDocs(collection(database, 'calendarMeets'));
-        console.log(docs)
         return await new Promise(r=>{
             let scheduledDays = [];
             docs.docs.forEach(async (docIn) => {
             const docRef = collection(database, `calendarMeets/${docIn.id}/meets`);
             const meetCol = await getDocs(docRef);
-            if(meetCol.empty == false){
-                const data = docIn.data();
-                scheduledDays.push(data.fecha);
-            }
+            let meets=[];
+            meetCol.docs.forEach(meet=>{
+                meets.push({id: meet.id, ...meet.data()});
+            });
+            scheduledDays.push({docId: docIn.id, ...docIn.data(), meets})
             r(scheduledDays)
         })
     }).then(result => (result));
