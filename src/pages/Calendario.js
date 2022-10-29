@@ -10,6 +10,7 @@ import {
   AccordionSummary,
   Button,
   Chip,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -22,6 +23,7 @@ import {
   OutlinedInput,
   Paper,
   Select,
+  Skeleton,
   Slide,
   TextField,
   Tooltip,
@@ -59,12 +61,13 @@ const Calendario = () => {
   const [meets, setMeets] = useState([]);
   const [selectedMeet, setSelectedMeet] = useState(citaBase);
   const [modal, setModal] = useState(false);
+  const [ready, setReady] = useState(false);
   const [modalType, setModalType] = useState('');
   const [docId, setDocId] = useState('');
   const [scheduledDays, setScheduledDays] = useState([]);
   const [firstSearch, setFirstSearch] = useState(true);
   const [scheduleView, setScheduleView] = useState(true);
-  const [daySelected, setDaySelected] = useState(true);
+  const [daySelected, setDaySelected] = useState(false);
   const [personName, setPersonName] = useState([]);
   const [users, setUsers] = useState([]);
 
@@ -139,11 +142,12 @@ const Calendario = () => {
 }
 
   useEffect(() => {
-    getScheduledDays().then(scheduledDaysRet =>  setScheduledDays(scheduledDaysRet))
+    getScheduledDays().then(scheduledDaysRet => {  setReady(true); setScheduledDays(scheduledDaysRet);})
     setMeets(dayHours);
   }, []);
   
   useEffect(() => {
+    if(firstSearch && scheduleView && scheduledDays) setDaySelected(true)
     if(date){  
       const retrievedDay = scheduledDays.find(day=>day.fecha == moment(date).format('YYYY-MM-DD'));    
       const retrievedMeets = retrievedDay?.meets || [];
@@ -433,8 +437,8 @@ const Calendario = () => {
                 overflow: 'scroll',
               }}
             >
-              <List sx={{overflow: 'hidden'}}>
-                {myMeets.map((day, index)=>
+              {ready ? <List sx={{overflow: 'hidden'}}>
+                { myMeets.map((day, index)=>
                 (day.today ? <Divider key={`${day.fecha}-${index}`} >Hoy</Divider> : <ListItem key={`${day.fecha}-${index}`}>
                   <div style={{display: 'flex', flexDirection: 'column', width: '100%'}}>
 
@@ -560,7 +564,7 @@ const Calendario = () => {
                   </ListItem>
                   )
                   )}
-              </List>
+              </List> : <div style={{display: 'flex', height: '100%', width: '100%', justifyContent: 'center', alignItems: 'center'}}><CircularProgress /></div>}
             </Paper> :
           
             <Paper
