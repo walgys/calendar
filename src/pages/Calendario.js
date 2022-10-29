@@ -168,7 +168,6 @@ const Calendario = () => {
   const changeInfo = async () => {
     const retrievedDay = scheduledDays.find(day=>day.fecha == date.toISOString().split('T')[0]);
     const retrievedMeets = retrievedDay.meets || [];
-    console.log(retrievedMeets)
       setDocId(retrievedDay.docId);
       let newMeets = [...dayHours];
       retrievedMeets.forEach(
@@ -381,7 +380,6 @@ const Calendario = () => {
         meet.invited.some((invite) => invite.uid == user.uid) 
       )
     ),{fecha: moment().format('YYYY-MM-DD'), today: true}].sort((a,b)=>moment(a.fecha).isBefore(b.fecha) ? -1 : 1);
-    console.log(myMeets)
   return (
     <Paper elevation={2} style={{}}>
       <div
@@ -438,8 +436,8 @@ const Calendario = () => {
               }}
             >
               <List sx={{overflow: 'hidden'}}>
-                {myMeets.map(day=>
-                (day.today ? <Divider >Hoy</Divider> : <ListItem>
+                {myMeets.map((day, index)=>
+                (day.today ? <Divider key={`${day.fecha}-${index}`} >Hoy</Divider> : <ListItem key={`${day.fecha}-${index}`}>
                   <div style={{display: 'flex', flexDirection: 'column', width: '100%'}}>
 
                   <Typography align='center'>{moment(day?.fecha).format('DD/MM/YYYY')}</Typography>{day?.meets?.map((meet,index)=>

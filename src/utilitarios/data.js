@@ -16,7 +16,6 @@ export const updateMeet = async (meet, docId) => {
     let result = 'ok';
         await runTransaction(database, async (transaction) => {
         const meetInfoRef = doc(database, `calendarMeets/${docId}/meets`, meet.id);
-        console.log(meetInfoRef)
         const {id, ...rest} = meet;
         updateDoc(meetInfoRef, {...rest});
     }).catch((err) => {
@@ -29,7 +28,7 @@ export const updateMeet = async (meet, docId) => {
 export const getScheduledDays = async () => {
     try{
         const docs = await getDocs(collection(database, 'calendarMeets'));
-        return await new Promise(r=>{
+        return new Promise(r=>{
             let scheduledDays = [];
             docs.docs.forEach(async (docIn) => {
             const docRef = collection(database, `calendarMeets/${docIn.id}/meets`);
@@ -49,7 +48,6 @@ export const getScheduledDays = async () => {
 }
 
 export const createMeet = async (meet, docId, date) => {
-    console.log(meet, docId, date)
     let result = 'ok';
         await runTransaction(database, async (transaction) => {
         let meetInfoRef;
