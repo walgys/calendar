@@ -18,7 +18,6 @@ import { AuthContext } from '../contexts/authContext';
 export default function Header() {
   const navigate = useNavigate();
   const { user} = useContext(AuthContext);
-  console.log(user && user.photoURL);
   const doSignOut = () => {
     signOut(auth);
     handleClose();

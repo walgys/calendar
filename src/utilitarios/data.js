@@ -38,6 +38,7 @@ export const getScheduledDays = async () => {
             };
             scheduledDays.push({docId: docIn.id, ...docIn.data(), meets});
         }
+        console.log(scheduledDays)
         return scheduledDays
         
     }catch(err){
@@ -47,6 +48,7 @@ export const getScheduledDays = async () => {
 
 export const createMeet = async (meet, docId, date) => {
     let result = 'ok';
+
         await runTransaction(database, async (transaction) => {
         let meetInfoRef;
         if(typeof docId == 'undefined'){
@@ -81,7 +83,7 @@ export const getDayMeets = async (date) => {
         const meetsRef = collection(database, 'calendarMeets');
         const q = query(meetsRef, where('fecha', '==', date));
         const docs = await getDocs(q);
-        console.log(docs)
+
         let meets = [];
         let docId;
         docs.docs.forEach((docIn) => {

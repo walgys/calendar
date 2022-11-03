@@ -63,14 +63,16 @@ const Calendario = () => {
   const [modal, setModal] = useState(false);
   const [ready, setReady] = useState(false);
   const [modalType, setModalType] = useState('');
-  const [docId, setDocId] = useState('');
+  const [docId, setDocId] = useState();
   const [scheduledDays, setScheduledDays] = useState([]);
   const [firstSearch, setFirstSearch] = useState(true);
   const [scheduleView, setScheduleView] = useState(true);
   const [daySelected, setDaySelected] = useState(false);
   const [personName, setPersonName] = useState([]);
   const [users, setUsers] = useState([]);
-
+  const containerRef = useRef();
+  const itemRef = useRef();
+  
   let invalidDates = [];
   const maxSubjectLength = 40;
   const maxDescriptionLength = 200;
@@ -141,6 +143,15 @@ const Calendario = () => {
     }
 }
 
+const myMeets = [...scheduledDays
+  ?.filter((day) => day.meets?.length > 0)
+  .filter((day) =>
+    day.meets.some((meet) =>
+      meet.invited.some((invite) => invite.uid == user.uid) ||
+      meet.members.some((member) => member.uid == user.uid)
+    )
+  ),{fecha: moment().format('YYYY-MM-DD'), today: true}].sort((a,b)=>moment(a.fecha).isBefore(b.fecha) ? -1 : 1);
+
   useEffect(() => {
     getScheduledDays().then(scheduledDaysRet => {  setReady(true); setScheduledDays(scheduledDaysRet);})
     setMeets(dayHours);
@@ -160,6 +171,14 @@ const Calendario = () => {
       setMeets(newMeets);
     }
   }, [scheduledDays])
+
+  useEffect(() => {
+      itemRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+  }, [myMeets])
+  
   
   
   const onSelectDate = async (value) => {
@@ -170,9 +189,10 @@ const Calendario = () => {
 
   const changeInfo = async () => {
     const retrievedDay = scheduledDays.find(day=>day.fecha == moment(date).format('YYYY-MM-DD'));
-    const retrievedMeets = retrievedDay.meets || [];
-    console.log(retrievedDay)
+    const retrievedMeets = retrievedDay?.meets || [];
+    if(!!retrievedDay){
       setDocId(retrievedDay.docId);
+    }
       let newMeets = [...dayHours];
       retrievedMeets.forEach(
         (retrievedMeet) => (newMeets[retrievedMeet.timeIndex] = retrievedMeet)
@@ -200,7 +220,7 @@ const Calendario = () => {
   };
 
   const onAsistir = (meet) => {
-    console.log(user);
+
     const newMeets = meets.map((meetState) =>
       meetState.id === meet.id
         ? {
@@ -319,7 +339,7 @@ const Calendario = () => {
 
   const handleSave = () => {
     const newMeet = { ...selectedMeet, invited: personName };
-    let result;
+
     if (modalType === 'crearCita')
       createMeet(newMeet, docId, date.toISOString().split('T')[0]).then((result) => {
         if (result === 'ok') {
@@ -373,15 +393,6 @@ const Calendario = () => {
     setDaySelected(!daySelected);
   }
 
-  const containerRef = useRef();
-
-  const myMeets = [...scheduledDays
-    ?.filter((day) => day.meets?.length > 0)
-    .filter((day) =>
-      day.meets.some((meet) =>
-        meet.invited.some((invite) => invite.uid == user.uid) 
-      )
-    ),{fecha: moment().format('YYYY-MM-DD'), today: true}].sort((a,b)=>moment(a.fecha).isBefore(b.fecha) ? -1 : 1);
   return (
     <Paper elevation={2} style={{}}>
       <div
@@ -439,7 +450,7 @@ const Calendario = () => {
             >
               {ready ? <List sx={{overflow: 'hidden'}}>
                 { myMeets.map((day, index)=>
-                (day.today ? <Divider key={`${day.fecha}-${index}`} >Hoy</Divider> : <ListItem key={`${day.fecha}-${index}`}>
+                (day.today ? <Divider key={`${day.fecha}-${index}`} ref={itemRef} >Hoy</Divider> : <ListItem key={`${day.fecha}-${index}`}>
                   <div style={{display: 'flex', flexDirection: 'column', width: '100%'}}>
 
                   <Typography align='center'>{moment(day?.fecha).format('DD/MM/YYYY')}</Typography>{day?.meets?.map((meet,index)=>
@@ -459,7 +470,7 @@ const Calendario = () => {
                       aria-controls="panel1a-content"
                       id="panel1a-header"
                       >
-                      <Typography>{`(${index} hs) ${
+                      <Typography>{`(${meet.timeIndex} hs) ${
                         (meet.subject?.length > maxSubjectLength
                             ? `${meet.subject.slice(0, maxSubjectLength)}...`
                             : meet.subject) || ''
@@ -740,7 +751,7 @@ const Calendario = () => {
               renderValue={(selected) => (
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                   {selected.map((value) => (
-                    <Chip key={value.id} label={value.displayName} />
+                    <Chip key={value.uid} label={value.displayName} />
                   ))}
                 </Box>
               )}
